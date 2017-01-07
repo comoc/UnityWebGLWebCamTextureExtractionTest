@@ -23,8 +23,9 @@ function post(name, success, error, base64) {
 	image.onload = function() {
 		context.drawImage(image, 0, 0);
 		var imagedata = context.getImageData(0, 0, image.width, image.height);
-		console.log('width: ' + imagedata.width + ' height: ' + imagedata.height);
 		var markers = detector.detect(imagedata);
+		var jsonMarkers = JSON.stringify(markers);
+		SendMessage(gameObjectName, methodNameSuccess, jsonMarkers);
 		drawCorners(markers);
 		drawId(markers);
 	};
