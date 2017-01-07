@@ -12,61 +12,90 @@
    }
  */
 		</style>
+		<script src="libs/aruco.js"></script>
+		<script src="libs/cv.js"></script>
+		<script src="libs/polyfill.js"></script>
 		<script>
+var canvas;
+var context;
+var detector;
+
+window.onload = function() {
+	canvas = document.getElementById('hidden_canvas');
+	context = canvas.getContext('2d');
+	detector = new AR.Detector();
+};
 var gameObjectName;
 var methodNameSuccess;
 var methodNameError;
 
 function post(name, success, error, base64) {
-	var canvas = document.getElementById('hidden_canvas');
-	var ctx = canvas.getContext('2d');
-	var image = new Image();
-	image.onload = function() {
-		ctx.drawImage(image, 0, 0);
-		var imagedata = ctx.getImageData(0, 0, image.width, image.height);
-		console.log('width: ' + imagedata.width + ' height: ' + imagedata.height);
-	};
-	image.src = base64;
-
 	gameObjectName = name;
 	methodNameSuccess = success;
 	methodNameError = error;
-		
-		// var xhr = new XMLHttpRequest();
-		// xhr.open('POST', url, true);
-		// xhr.setRequestHeader('Content-Type', 'application/json');
-			// xhr.onreadystatechange = function () {
-				// 	if (xhr.readyState == 4) {
-					// 		if (xhr.status == 200) {
-						// 			if (gameObjectName && methodNameSuccess)
-						// 				SendMessage(gameObjectName, methodNameSuccess, xhr.responseText);
-						// 		} else {
-						// 			if (gameObjectName && methodNameError)
-						// 				SendMessage(gameObjectName, methodNameError, xhr.responseText);
-						// 		}
-					// 	} else {
-					// 		console.log("xhr.status: " + xhr.status);
-					// 	}
-				// };
-			//
-			// var params = {
-				// 	requests: [
-					// 		{
-						// 			image: {
-							// 				content: base64
-							// 			},
-						// 			features: [
-							// 				{
-								// 					type: apiType,
-								// 					maxResults: maxResults
-								// 				}
-							// 			]
-						// 		}
-					// 	]
-				// };
-			//
-			// xhr.send(JSON.stringify(params));
+	
+	var image = new Image();
+	image.onload = function() {
+		context.drawImage(image, 0, 0);
+		var imagedata = context.getImageData(0, 0, image.width, image.height);
+		console.log('width: ' + imagedata.width + ' height: ' + imagedata.height);
+		var markers = detector.detect(imagedata);
+		drawCorners(markers);
+		drawId(markers);
+	};
+	image.src = base64;
+}
+
+function drawCorners(markers){
+	var corners, corner, i, j;
+
+	context.lineWidth = 3;
+
+	for (i = 0; i !== markers.length; ++ i){
+		corners = markers[i].corners;
+
+		context.strokeStyle = "red";
+		context.beginPath();
+
+		for (j = 0; j !== corners.length; ++ j){
+			corner = corners[j];
+			context.moveTo(corner.x, corner.y);
+			corner = corners[(j + 1) % corners.length];
+			context.lineTo(corner.x, corner.y);
 		}
+
+		context.stroke();
+		context.closePath();
+
+		context.strokeStyle = "green";
+		context.strokeRect(corners[0].x - 2, corners[0].y - 2, 4, 4);
+	}
+}
+
+function drawId(markers){
+	var corners, corner, x, y, i, j;
+
+	context.strokeStyle = "blue";
+	context.lineWidth = 1;
+
+	for (i = 0; i !== markers.length; ++ i){
+		corners = markers[i].corners;
+
+		x = Infinity;
+		y = Infinity;
+
+		for (j = 0; j !== corners.length; ++ j){
+			corner = corners[j];
+
+			x = Math.min(x, corner.x);
+			y = Math.min(y, corner.y);
+		}
+
+		context.strokeText(markers[i].id, x, y)
+	}
+}
+
+
 		</script>
 	</head>
 	<body>
